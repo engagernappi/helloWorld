@@ -36,6 +36,7 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
+        window.PERSISTENT_CROSSPLATFORM = 4;
         window.open = cordova.InAppBrowser.open;
     },
 
@@ -107,7 +108,7 @@ var home = {
             case consts.actions.openVideo:
                 console.log("openVideo");
                 window.fileEntry = "teste";
-                var nativePath = cordova.file.dataDirectory + "files/download.mp4"
+                var nativePath = cordova.file.dataDirectory + "download.mp4"
                 console.log("native path: " + nativePath);
                 resolveLocalFileSystemURL(nativePath, function(entry) {
                     console.log("achou o arquivo");
@@ -292,7 +293,7 @@ var downloadService = {
     init: function(){
         console.log("downloadService.init");
 
-        window.requestFileSystem(window.PERSISTENT, 0, function (fs) {
+        window.requestFileSystem(window.PERSISTENT_CROSSPLATFORM, 0, function (fs) {
             console.log('requestFileSystem -> fs');
             console.log(fs);
             // Make sure you add the domain name to the Content-Security-Policy <meta> element.
