@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Vídeo local</title>
+</head>
+<body>
+	<p>Você está assistindo o vídeo local!</p>
+	<video id="video" class="video" width="100%" height="240" controls></video>
+	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="cordova.js"></script>
+	<script type="text/javascript">
+		window.onload = function(){
+			console.log("window.onload");
+			var video = document.getElementById('video');
+			var source = document.createElement('source');
+			source.setAttribute('src', cordova.file.dataDirectory + "download.mp4");
+			video.appendChild(source);
+			//video.play();
+		};	
+	</script>
+</body>
+</html>
