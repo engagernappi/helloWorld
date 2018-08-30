@@ -110,11 +110,13 @@ var home = {
                 window.fileEntry = "teste";
                 var nativePath = cordova.file.dataDirectory + "download.mp4"
                 console.log("native path: " + nativePath);
-                resolveLocalFileSystemURL(nativePath, function(entry) {
+                window.resolveLocalFileSystemURL(nativePath, function(entry) {
                     console.log("achou o arquivo");
                     window.fileEntry = entry;
 
                     var video = document.getElementById('video');
+
+                    var teste = entry.getMetadata();
                     var source = document.createElement('source');
                     source.setAttribute('src', window.fileEntry.toURL());
                     source.setAttribute('type', "video/mp4");
@@ -308,11 +310,11 @@ var downloadService = {
         }, downloadService.onErrorLoadFs);
     },
 
-    onErrorCreateFile: function(){
+    onErrorCreateFile: function(error){
         console.log("onErrorCreateFile");
     },
 
-    onErrorLoadFs: function(){
+    onErrorLoadFs: function(error){
         console.log("onErrorLoadFs");
     },
 

@@ -1,0 +1,41 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run to browser",
+            "type": "cordova",
+            "request": "launch",
+            "platform": "browser",
+            "target": "browser",
+            "cwd": "${workspaceRoot}",
+            "sourceMaps": true
+        },
+        {
+            "name": "Attach to android on device",
+            "type": "cordova",
+            "request": "attach",
+            "platform": "android",
+            "target": "device",
+            "cwd": "${workspaceRoot}",
+            "sourceMaps": true
+        },
+        {
+            "name": "Run android on device",
+            "type": "cordova",
+            "request": "launch",
+            "platform": "android",
+            "target": "device",
+            "sourceMaps": true,
+            "cwd": "${workspaceRoot}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/www\\js\\app.js"
+        }
+    ]
+}
