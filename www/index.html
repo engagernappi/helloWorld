@@ -16,7 +16,7 @@
         * Create your own at http://cspisawesome.com
         -->
         <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline' https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *" /> -->
-
+        <link rel="stylesheet" href="bootstrap-4.1.3-dist/css/bootstrap.css">
         <style type="text/css">
             .text {
                 display: block;
@@ -26,36 +26,68 @@
                 text-overflow: ellipsis;
             }
         </style>
-        <title>Hello World</title>
+        <title>Teste App</title>
     </head>
 
-<body>
-    <div class="app">
-        <div>Tipo de conexão: <span id="connectionType">...</span></div>
-        <div><input type="checkbox" id="mobileDataEnabled" name="mobileDataEnabled" checked onchange="app.homeController.mobileDataEnabled_onChange(this, event)" /> Utilizar plano de dados?</div>
-
-        <!--
-        <div id="deviceready" class="blink">
-            <p class="event listening">Connecting to Device</p>
-            <p class="event received">Device is Ready</p>
-            <div id="session" class="text"></div>
-            <div id="settings" class="text"></div>
-            <div id="user" class="text"></div>
-            <button type="button" name="local" data-action="open-video" data-url="local.html">Assistir local</button>
-            <button type="button" name="remoto" data-action="open-html" data-url="remoto.html">Assistir remoto</button>
-            <button type="button" name="download" data-action="download" data-url="https://s3.engage.bz/treinamentohcn/cursos/curso15313/data/video1.mp4">Fazer download</button>
-            <video id="video" class="video" width="100%" height="240" controls></video>
+    <body>
+        <div class="app container">
+            <div class="card mt-4 mb-4">
+                <div class="card-header">Auth:</div>
+                <div class="card-body">
+                    <p><small class="text-muted" id="authData">...</small></p>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">Jogador:</div>
+                <div class="card-body">
+                    <p><small class="text-muted" id="userData">...</small></p>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">Config:</div>
+                <div class="card-body">
+                    <p>
+                        <small class="text-muted">
+                            Tipo de conexão: 
+                            <span id="connectionType">...</span>
+                        </small>
+                    </p>
+                    <input type="checkbox" id="chMobileData" name="mobileDataEnabled" checked/> Utilizar plano de dados?
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">Vídeo online:</div>
+                <div class="card-body">
+                    <div class="embed-responsive embed-responsive-16by9">
+                        <video class="embed-responsive-item" controls>
+                            <source src="https://s3pre.engage.bz/apptest/video.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+            </div>
+            <!--
+            <div id="deviceready" class="blink">
+                <p class="event listening">Connecting to Device</p>
+                <p class="event received">Device is Ready</p>
+                <div id="session" class="text"></div>
+                <div id="settings" class="text"></div>
+                <div id="user" class="text"></div>
+                <button type="button" name="local" data-action="open-video" data-url="local.html">Assistir local</button>
+                <button type="button" name="remoto" data-action="open-html" data-url="remoto.html">Assistir remoto</button>
+                <button type="button" name="download" data-action="download" data-url="https://s3.engage.bz/treinamentohcn/cursos/curso15313/data/video1.mp4">Fazer download</button>
+                <video id="video" class="video" width="100%" height="240" controls></video>
+            </div>
+            -->
         </div>
-        -->
-    </div>
-    <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-    <script type="text/javascript" src="cordova.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            app.init();
-        });
-    </script>   
-</body>
+        <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+        <script type="text/javascript" src="bootstrap-4.1.3-dist/js/bootstrap.bundle.js"></script>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/app.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                app.init();
+            });
+        </script>   
+    </body>
 
 </html>
