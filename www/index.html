@@ -25,6 +25,9 @@
                 white-space: nowrap;
                 text-overflow: ellipsis;
             }
+            .progress {
+                margin-top: 10px;
+            }
         </style>
         <title>Teste App</title>
     </head>
@@ -53,6 +56,16 @@
                         </small>
                     </p>
                     <input type="checkbox" id="chMobileData" name="mobileDataEnabled" checked/> Utilizar plano de dados?
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">Download:</div>
+                <div class="card-body">
+                    <button id="btnDownloadVideo" type="button" class="btn btn-primary btn-lg btn-block">Download vídeo</button>
+                    <button id="btnDeleteVideo" type="button" class="btn btn-primary btn-lg btn-block">Apagar vídeo</button>
+                    <div id="progress" class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
                 </div>
             </div>
             <div class="card mb-4">

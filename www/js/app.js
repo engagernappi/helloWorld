@@ -1,7 +1,7 @@
 var modules = {};
 modules.contants = (function(){
     return {
-        PERSISTENT_CROSSPLATFORM: 4,
+        PERSISTENT_CROSSPLATFORM: 1,
         OFF_LINE: 'offline',
         ON_LINE: 'online'
     }
@@ -25,12 +25,14 @@ modules.session = (function(){
         useMobileData: true
     };
     var userRelated = {};
+    var files = [];
     return {
         connection: connection,
         credentials: credentials,
         authData: authData,
         userPreferences: userPreferences,
-        userRelated: userRelated
+        userRelated: userRelated,
+        files: files
     };
 })();
 
@@ -101,35 +103,73 @@ modules.fileService = (function(contants, session){
         
         return errors
     }
-    var createFileEntry = function(file) {
+    var _getFileSystem = function(fileSize) {
         var defer = $.Deferred();
-        window.requestFileSystem(contants.PERSISTENT_CROSSPLATFORM, file.size, function(fs){
+        window.requestFileSystem(contants.PERSISTENT_CROSSPLATFORM, fileSize, function(fs){
+            console.log('FileSystem SUCCESS', fs);
             defer.resolve(fs);
         }, function(error){
+            console.log('FileSystem ERROR', error);
             defer.reject(error);
         });
-        /*
-        window.requestFileSystem(contants.PERSISTENT_CROSSPLATFORM, file.size, function (fs) {
-            defer.resolve(fs);
-            //fs.root.getFile(file.name, file.config, defer.resolve, defer.reject);
-        }, defer.reject);
-        */
         return defer.promise();
     }
-    var downloadFile = function(url, fileEntry){     
+    var _getFileEntry = function(fileSystem, fileName, config){
+        var defer = $.Deferred();
+        fileSystem.root.getFile(fileName, config, function (fileEntry) {
+            console.log('FileEntry SUCCESS', fileEntry);
+            defer.resolve(fileEntry);
+        }, function(error){
+            console.log('FileEntry ERROR', error);
+            defer.reject(error);
+        });
+        return defer.promise();
+    }
+    var downloadFile = function(file, progressHandler){     
         var defer = $.Deferred();
         var errors = _checkConnection();
         if(errors.length > 0) 
-            defer.reject(errors);
+            defer.reject('checkConnection ERROR', errors);
         else{
-            var fileTransfer = new FileTransfer();
-            fileTransfer.download(url, fileEntry.toURL(), defer.resolve, defer.reject)
+            _getFileSystem(file.size)
+            .done(function(fs){
+                _getFileEntry(fs, file.name, file.config)
+                .done(function(fileEntry){
+                    var fileTransfer = new FileTransfer();
+                    fileTransfer.onprogress = function(progressEvent){
+                        var percent = Math.round(progressEvent.loaded / progressEvent.total) * 100;
+                        defer.notify({percent: percent});
+                    };
+                    fileTransfer.download(file.url, fileEntry.toURL(), function(file){
+                        console.log('download SUCCESS', file.remove);
+                        defer.resolve(file);
+                    }, function(error){
+                        console.log('download ERROR', error);
+                        defer.reject(error);
+                    })
+                })
+                .fail(function(fileEntryError){
+                    defer.reject(fileEntryError);
+                });
+            })
+            .fail(function(fileSystemError){
+                defer.reject(fileSystemError);
+            });
         }
-        return defer;
+        return defer.promise();
+    }
+    var deleteFile = function(fileEntry){
+        var defer = $.Deferred();
+        fileEntry.remove(function(){
+            defer.resolve();
+        },function(error){
+            defer.reject(error);
+        });
+        return defer.promise();
     }
     return {
-        createFileEntry: createFileEntry,
-        downloadFile: downloadFile
+        downloadFile: downloadFile,
+        deleteFile: deleteFile
     }
 })(modules.contants, modules.session);
 
@@ -155,12 +195,12 @@ modules.userCardController = (function(session, userService){
     var init = function(){
         $lblUserData.text('carregando...');
         userService.getRelated()
-            .done(function(){
-                var attributes = _getAttributeTag('Nome: ' + session.userRelated.name);
-                attributes += _getAttributeTag('Score: ' + session.userRelated.score);
-                attributes += _getAttributeTag('Coins: ' + session.userRelated.coins);
-                $lblUserData.html(attributes);
-            });
+        .done(function(){
+            var attributes = _getAttributeTag('Nome: ' + session.userRelated.name);
+            attributes += _getAttributeTag('Score: ' + session.userRelated.score);
+            attributes += _getAttributeTag('Coins: ' + session.userRelated.coins);
+            $lblUserData.html(attributes);
+        });
     }
     return {
         init: init
@@ -191,29 +231,80 @@ modules.networkCardController = (function(contants, session){
     }
 })(modules.contants, modules.session);
 
-modules.downloadCardController = (function(fileService){
-    var init = function(){
-        fileService.createFileEntry({
-            name: 'download.mp4',
+modules.downloadCardController = (function(session, fileService){
+    var $progress = $('#progress');
+    var $progressbar = $progress.find('.progress-bar');
+    var $btnDownloadVideo = $('#btnDownloadVideo');
+    var $btnDeleteVideo = $('#btnDeleteVideo');
+    var _downloadVideo = function(file){
+        $progressbar.css('width', '0%');
+        $progressbar.attr('aria-valuenow', 0);
+        $progress.show(); 
+        fileService.downloadFile({
             size: 0,
-            config: { create: true, exclusive: false }
-        }).done(function(fileEntry){
-            console.log('createFileEntry SUCCESS');
-            console.log('fileEntry', fileEntry);
+            name: file.name,
+            config: { 
+                create: true, 
+                exclusive: false 
+            },
+            url: file.url
+        }).progress(function(progress){
+            $progressbar.css('width', progress.percent + '%');
+            $progressbar.attr('aria-valuenow', progress.percent);
+        }).done(function(file){
+            session.files[0] = file;
+            console.log('downloadCardController => download SUCCESS', file);
         }).fail(function(error){
-            console.log('createFileEntry ERROR');
-            console.log('fileEntry', error);           
+            console.log('downloadCardController => download ERROR', error);
+        }).always(function(){
+            _updateCard();
         });
     }
-    return {
-        init: init
+    var _deleteVideo = function(){
+        fileService.deleteFile(session.files[0])
+        .done(function(){
+            console.log('delete file SUCCESS');
+            session.files = [];
+            _updateCard();
+        })
+        .fail(function(error){
+            console.log('delete file ERROR', error);
+        }).always(function(){
+            _updateCard();
+        });
     }
-})(modules.fileService);
+    var _updateCard = function(){
+        $btnDownloadVideo.prop("disabled", session.files.length > 0);
+        $btnDeleteVideo.prop("disabled", session.files.length == 0);
+        $progress.hide();
+    }
+    var startDownloadButton_onClick = function(event){
+        $btnDownloadVideo.prop("disabled", true);
+        _downloadVideo({
+            name: 'download.mp4',
+            url: 'https://s3pre.engage.bz/apptest/video.mp4'
+        });
+    }
+    var deleteVideoButton_onClick = function(event){
+        $btnDeleteVideo.prop("disabled", true);
+        _deleteVideo();
+    }
+    var init = function(){
+        _updateCard();
+    }
+    return {
+        init: init,
+        startDownloadButton_onClick: startDownloadButton_onClick,
+        deleteVideoButton_onClick: deleteVideoButton_onClick
+    }
+})(modules.session, modules.fileService);
 
 var app = (function(contants, session, authService, userCardController, networkCardController, downloadCardController){
     var $lblAuthData = $('#authData');
     var _bindAppEvents = function(){       
         $('#chMobileData').on('change', networkCardController.mobileDataEnabled_onChange);
+        $('#btnDownloadVideo').on('click', downloadCardController.startDownloadButton_onClick);
+        $('#btnDeleteVideo').on('click', downloadCardController.deleteVideoButton_onClick);    
         document.addEventListener("offline", networkCardController.onConnectionChange, false);
         document.addEventListener("online", networkCardController.onConnectionChange, false);
     }
