@@ -106,10 +106,8 @@ modules.fileService = (function(contants, session){
     var _getFileSystem = function(fileSize) {
         var defer = $.Deferred();
         window.requestFileSystem(contants.PERSISTENT_CROSSPLATFORM, fileSize, function(fs){
-            console.log('FileSystem SUCCESS', fs);
             defer.resolve(fs);
         }, function(error){
-            console.log('FileSystem ERROR', error);
             defer.reject(error);
         });
         return defer.promise();
@@ -117,46 +115,37 @@ modules.fileService = (function(contants, session){
     var _getFileEntry = function(fileSystem, fileName, config){
         var defer = $.Deferred();
         fileSystem.root.getFile(fileName, config, function (fileEntry) {
-            console.log('FileEntry SUCCESS', fileEntry);
             defer.resolve(fileEntry);
         }, function(error){
-            console.log('FileEntry ERROR', error);
             defer.reject(error);
         });
         return defer.promise();
     }
-    var downloadFile = function(file, progressHandler){     
+    var _download = function(fileUrl, filePath){
         var defer = $.Deferred();
         var errors = _checkConnection();
         if(errors.length > 0) 
             defer.reject('checkConnection ERROR', errors);
         else{
-            _getFileSystem(file.size)
-            .done(function(fs){
-                _getFileEntry(fs, file.name, file.config)
-                .done(function(fileEntry){
-                    var fileTransfer = new FileTransfer();
-                    fileTransfer.onprogress = function(progressEvent){
-                        var percent = Math.round(progressEvent.loaded / progressEvent.total) * 100;
-                        defer.notify({percent: percent});
-                    };
-                    fileTransfer.download(file.url, fileEntry.toURL(), function(file){
-                        console.log('download SUCCESS', file.remove);
-                        defer.resolve(file);
-                    }, function(error){
-                        console.log('download ERROR', error);
-                        defer.reject(error);
-                    })
-                })
-                .fail(function(fileEntryError){
-                    defer.reject(fileEntryError);
-                });
-            })
-            .fail(function(fileSystemError){
-                defer.reject(fileSystemError);
+            var fileTransfer = new FileTransfer();
+            fileTransfer.onprogress = function(progressEvent){
+                var percent = (progressEvent.loaded / progressEvent.total) * 100 ;
+                defer.notify({percent: Math.round(percent)});
+            };
+            fileTransfer.download(fileUrl, filePath, function(file){
+                defer.resolve(file);
+            }, function(error){
+                defer.reject(error);
             });
         }
         return defer.promise();
+    }
+    var downloadFile = function(file){
+        return _getFileSystem(file.size).then(function(fs){
+            return _getFileEntry(fs, file.name, file.config).then(function(fileEntry){
+                return _download(file.url, fileEntry.toURL());
+            })
+        });
     }
     var deleteFile = function(fileEntry){
         var defer = $.Deferred();
@@ -236,6 +225,7 @@ modules.downloadCardController = (function(session, fileService){
     var $progressbar = $progress.find('.progress-bar');
     var $btnDownloadVideo = $('#btnDownloadVideo');
     var $btnDeleteVideo = $('#btnDeleteVideo');
+    var $localVideoPlayer = $('#localVideoPlayer');
     var _downloadVideo = function(file){
         $progressbar.css('width', '0%');
         $progressbar.attr('aria-valuenow', 0);
@@ -249,6 +239,7 @@ modules.downloadCardController = (function(session, fileService){
             },
             url: file.url
         }).progress(function(progress){
+            console.log(progress);
             $progressbar.css('width', progress.percent + '%');
             $progressbar.attr('aria-valuenow', progress.percent);
         }).done(function(file){
@@ -277,6 +268,18 @@ modules.downloadCardController = (function(session, fileService){
         $btnDownloadVideo.prop("disabled", session.files.length > 0);
         $btnDeleteVideo.prop("disabled", session.files.length == 0);
         $progress.hide();
+        $localVideoPlayer.empty().hide();
+        if(session.files.length > 0)
+            _appendVideo(session.files[0].toURL());
+    }
+    var _appendVideo = function(fileUrl){
+        var $video = $('<video class="embed-responsive-item" controls></video>');
+        var source = document.createElement('source');
+        source.setAttribute('src', fileUrl);
+        source.setAttribute('type', "video/mp4");
+        $video.append(source);
+        $localVideoPlayer.append($video);
+        $localVideoPlayer.show();
     }
     var startDownloadButton_onClick = function(event){
         $btnDownloadVideo.prop("disabled", true);
