@@ -147,6 +147,11 @@ modules.fileService = (function(contants, session){
             })
         });
     }
+    var fileExists = function(file){
+        return _getFileSystem(0).then(function(fs){
+            return _getFileEntry(fs, file.name, file.config);
+        });
+    }
     var deleteFile = function(fileEntry){
         var defer = $.Deferred();
         fileEntry.remove(function(){
@@ -158,7 +163,8 @@ modules.fileService = (function(contants, session){
     }
     return {
         downloadFile: downloadFile,
-        deleteFile: deleteFile
+        deleteFile: deleteFile,
+        fileExists: fileExists
     }
 })(modules.contants, modules.session);
 
@@ -302,7 +308,7 @@ modules.downloadCardController = (function(session, fileService){
     }
 })(modules.session, modules.fileService);
 
-var app = (function(contants, session, authService, userCardController, networkCardController, downloadCardController){
+var app = (function(contants, session, authService, fileService, userCardController, networkCardController, downloadCardController){
     var $lblAuthData = $('#authData');
     var _bindAppEvents = function(){       
         $('#chMobileData').on('change', networkCardController.mobileDataEnabled_onChange);
@@ -325,7 +331,14 @@ var app = (function(contants, session, authService, userCardController, networkC
             function(){ $lblAuthData.text(session.authData.access_token); }
         ]);
         networkCardController.init();
-        downloadCardController.init();
+        fileService.fileExists({
+            name: 'download.mp4',
+            config: { create:false }
+        }).done(function(fileEntry){
+            session.files[0] = fileEntry;
+        }).always(function(){
+            downloadCardController.init();
+        })
     }
 
     var init = function(){
@@ -335,4 +348,4 @@ var app = (function(contants, session, authService, userCardController, networkC
     return {
         init: init
     }
-})(modules.contants, modules.session, modules.authService, modules.userCardController, modules.networkCardController, modules.downloadCardController)
+})(modules.contants, modules.session, modules.authService, modules.fileService, modules.userCardController, modules.networkCardController, modules.downloadCardController)
