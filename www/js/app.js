@@ -140,6 +140,13 @@ modules.fileService = (function(contants, session){
         }
         return defer.promise();
     }
+    var _getMetadata = function(fileEntry){
+        var defer = $.Deferred();
+        fileEntry.getMetadata(function(metadata){
+            defer.resolve(metadata);
+        });
+        return defer.promise();
+    }
     var downloadFile = function(file){
         return _getFileSystem(file.size).then(function(fs){
             return _getFileEntry(fs, file.name, file.config).then(function(fileEntry){
@@ -150,6 +157,20 @@ modules.fileService = (function(contants, session){
     var fileExists = function(file){
         return _getFileSystem(0).then(function(fs){
             return _getFileEntry(fs, file.name, file.config);
+        });
+    }
+    var fileSync = function(fileEntry){
+        return _getMetadata(fileEntry).then(function(metadata){
+            var localMod = metadata.modificationTime.toGMTString();
+            return $.ajax({
+                url:'https://s3pre.engage.bz/apptest/video.mp4',
+                method:"HEAD"
+            }).then(function(res,text,jqXHR) {
+                var defer = $.Deferred();
+                var lastMod = jqXHR.getResponseHeader('Last-Modified');
+                defer.resolve({needUpdate: (localMod != lastMod)});
+                return defer.promise();
+            });
         });
     }
     var deleteFile = function(fileEntry){
@@ -164,7 +185,8 @@ modules.fileService = (function(contants, session){
     return {
         downloadFile: downloadFile,
         deleteFile: deleteFile,
-        fileExists: fileExists
+        fileExists: fileExists,
+        fileSync: fileSync
     }
 })(modules.contants, modules.session);
 
@@ -242,6 +264,10 @@ modules.downloadCardController = (function(session, fileService){
             config: { 
                 create: true, 
                 exclusive: false 
+            },
+            headers: {
+                "Cache-Control": "no-cache",
+                "If-Modified-Since": "Tue, 20 Oct 2015 07:28:20 GMT"
             },
             url: file.url
         }).progress(function(progress){
@@ -336,6 +362,11 @@ var app = (function(contants, session, authService, fileService, userCardControl
             config: { create:false }
         }).done(function(fileEntry){
             session.files[0] = fileEntry;
+            fileService.fileSync(fileEntry).then(function(file){
+                console.log('needUpdate: ', file);
+                if(file.needUpdate)
+                    $('#btnDownloadVideo').trigger("click");
+            });
         }).always(function(){
             downloadCardController.init();
         })
